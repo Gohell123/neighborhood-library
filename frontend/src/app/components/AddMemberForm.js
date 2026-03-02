@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { createMember } from "../../lib/api";
 
 export default function AddMemberForm({ onMemberAdded }) {
   const [form, setForm] = useState({
@@ -7,6 +8,8 @@ export default function AddMemberForm({ onMemberAdded }) {
     email: "",
     phone: "",
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({
@@ -17,38 +20,53 @@ export default function AddMemberForm({ onMemberAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    const res = await fetch("http://127.0.0.1:8000/members", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
+    try {
+      await createMember(form);
 
-    if (!res.ok) {
-      const error = await res.json();
-      alert(error.detail || "Failed to add member");
-      return;
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+      });
+
+      onMemberAdded();
+    } catch (error) {
+      alert(error.message || "Failed to add member");
+    } finally {
+      setLoading(false);
     }
-
-    setForm({
-      name: "",
-      email: "",
-      phone: "",
-    });
-
-    onMemberAdded();
   };
 
   return (
     <div style={{ marginBottom: "30px" }}>
       <h2>Add Member</h2>
       <form onSubmit={handleSubmit}>
-        <input name="name" placeholder="Name" value={form.name} onChange={handleChange} required />
-        <input name="email" placeholder="Email" value={form.email} onChange={handleChange} required />
-        <input name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} required />
-        <button type="submit">Add Member</button>
+        <input
+          name="name"
+          placeholder="Name"
+          value={form.name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="phone"
+          placeholder="Phone"
+          value={form.phone}
+          onChange={handleChange}
+          required
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Adding..." : "Add Member"}
+        </button>
       </form>
     </div>
   );

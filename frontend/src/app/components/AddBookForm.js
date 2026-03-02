@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { createBook } from "../../lib/api";
 
 export default function AddBookForm({ onBookAdded }) {
   const [form, setForm] = useState({
@@ -8,6 +9,8 @@ export default function AddBookForm({ onBookAdded }) {
     isbn: "",
     total_copies: 1,
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({
@@ -18,41 +21,53 @@ export default function AddBookForm({ onBookAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    const res = await fetch("http://127.0.0.1:8000/books", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    try {
+      await createBook({
         ...form,
         total_copies: Number(form.total_copies),
-      }),
-    });
+      });
 
-    if (!res.ok) {
-      const error = await res.json();
-      alert(error.detail || "Failed to add book");
-      return;
+      setForm({
+        title: "",
+        author: "",
+        isbn: "",
+        total_copies: 1,
+      });
+
+      onBookAdded();
+    } catch (error) {
+      alert(error.message || "Failed to add book");
+    } finally {
+      setLoading(false);
     }
-
-    setForm({
-      title: "",
-      author: "",
-      isbn: "",
-      total_copies: 1,
-    });
-
-    onBookAdded();
   };
 
   return (
     <div style={{ marginBottom: "30px" }}>
       <h2>Add Book</h2>
       <form onSubmit={handleSubmit}>
-        <input name="title" placeholder="Title" value={form.title} onChange={handleChange} required />
-        <input name="author" placeholder="Author" value={form.author} onChange={handleChange} required />
-        <input name="isbn" placeholder="ISBN" value={form.isbn} onChange={handleChange} />
+        <input
+          name="title"
+          placeholder="Title"
+          value={form.title}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="author"
+          placeholder="Author"
+          value={form.author}
+          onChange={handleChange}
+          required
+        />
+        <input
+          name="isbn"
+          placeholder="ISBN"
+          value={form.isbn}
+          onChange={handleChange}
+        />
         <input
           name="total_copies"
           type="number"
@@ -61,7 +76,9 @@ export default function AddBookForm({ onBookAdded }) {
           onChange={handleChange}
           required
         />
-        <button type="submit">Add Book</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Adding..." : "Add Book"}
+        </button>
       </form>
     </div>
   );
